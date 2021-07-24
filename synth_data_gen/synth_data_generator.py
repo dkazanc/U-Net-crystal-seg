@@ -26,7 +26,7 @@ import random
 def normalise_im(im):
     return (im - im.min())/(im.max() - im.min())
 
-def create_sample(dataset, N_size, output_path_recon, output_path_gt):
+def create_sample(dataset, N_size, total_angles, output_path_recon, output_path_gt):
     print ("Building 3D phantom using TomoPhantom software")
     
     el1 = {'Obj': Objects3D.ELLIPSOID,
@@ -106,8 +106,7 @@ def create_sample(dataset, N_size, output_path_recon, output_path_gt):
     # Projection geometry related parameters:
     Horiz_det = int(np.sqrt(2)*N_size)
     Vert_det = N_size # detector row count (vertical) (no reason for it to be > N)
-    angles_num = int(0.5*np.pi*N_size); # angles number
-    angles = np.linspace(0.0,179.9,angles_num,dtype='float32') # in degrees
+    angles = np.linspace(0.0,179.9,total_angles,dtype='float32') # in degrees
     angles_rad = angles*(np.pi/180.0)
 
     print ("Forward project the resulting 3D phantom")
@@ -233,10 +232,11 @@ if __name__ == '__main__':
     dataset = "00000"
     N_datasets = int(args.n_datasets)
     N_size = int(args.size)
+    total_angles = int(args.angles)
     output_path_recon = args.dir_img
     output_path_gt = args.dir_mask
 
     for i in range(N_datasets):
         print("Creating dataset", dataset)
-        create_sample(dataset, N_size, output_path_recon, output_path_gt)
+        create_sample(dataset, N_size, total_angles, output_path_recon, output_path_gt)
         dataset = str(i+1).zfill(5)
