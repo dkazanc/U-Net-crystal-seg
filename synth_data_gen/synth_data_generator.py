@@ -1,71 +1,77 @@
+"""
+Script to generate synthetic data and then reconstruct it  using various imaging artifacts
+The data generated is to replicate X-ray macromolecular data
+Usage >>>> python synth_data_generator.py -i OUTPUT_PATH_TO_RECON -m OUTPUT_PATH_TO_MASKS -n NUMBER_of_DATASETS -s RECON_SIZE -a TOTAL_PROJECTIONS_NUMBER
+Authors:
+Daniil Kazantsev
+Gerard Jover Pujol
+"""
 import argparse
 import logging
-import os
-import sys
 
 import numpy as np
 from PIL import Image
-import timeit
 
-#import tomophantom
 from tomophantom import TomoP3D
-from tomophantom.supp.qualitymetrics import QualityTools
 from tomophantom.supp.flatsgen import synth_flats
+from tomophantom.supp.artifacts import _Artifacts_
+from tomophantom.TomoP3D import Objects3D
+
 from tomobar.supp.suppTools import normaliser
 from tomobar.methodsDIR import RecToolsDIR
 from tomobar.methodsIR import RecToolsIR
-from tomophantom.supp.artifacts import _Artifacts_
+
 import random
-from tomophantom.TomoP3D import Objects3D
-# python synth_generator.py -i RECON -m MASKS -n NO_DATASETS -s RECON_SIZE -a ANGLES_NUMBER
 
 def normalise_im(im):
     return (im - im.min())/(im.max() - im.min())
 
-def get_phantom_params(N_size):
-    a_el1_min = 0.7
-    a_el1_max = 0.95
-    a_el1 = random.uniform(a_el1_min, a_el1_max)
-    b_el1_min = 0.6
-    b_el1_max = 0.75
-    b_el1 = random.uniform(b_el1_min, b_el1_max)
-    c_el1_min = 0.6
-    c_el1_max = 0.85
-    c_el1 = random.uniform(c_el1_min, c_el1_max)
-
+def create_sample(dataset, N_size, output_path_recon, output_path_gt):
+    print ("Building 3D phantom using TomoPhantom software")
+    
     el1 = {'Obj': Objects3D.ELLIPSOID,
-          'C0' : 0.7,
+          'C0' : 0.2,
           'x0' : 0.0,
           'y0' : 0.0,
           'z0' : 0.0,
-          'a'  : a_el1,
-          'b'  : b_el1,
-          'c'  : c_el1,
+          'a'  : 0.8,
+          'b'  : 0.65,
+          'c'  : 0.6,
           'phi1': 0.0}
-
-
-    a_el2_min = 0.6
-    a_el2_max = a_el1
-    a_el2 = random.uniform(a_el2_min, a_el2_max)
-    b_el2_min = 0.6
-    b_el2_max = b_el1
-    b_el2 = random.uniform(b_el2_min, b_el2_max)
-    c_el2_min = 0.6
-    c_el2_max = c_el1
-    c_el2 = random.uniform(c_el2_min, c_el2_max)
-
+    
     el2 = {'Obj': Objects3D.ELLIPSOID,
-          'C0' : -0.4,
+          'C0' : -0.2,
           'x0' : 0.0,
           'y0' : 0.0,
           'z0' : 0.0,
-          'a'  : a_el2,
-          'b'  : b_el2,
-          'c'  : c_el2,
-          'phi1' : 0.0}
-
-    C0_min = 0.01
-    C0_max = 0.2
+          'a'  : 0.7,
+          'b'  : 0.5,
+          'c'  : 0.5,
+          'phi1': 0.0}
+    
+    myObjects=[el1,el2]
+    GROUND_TRUTH = TomoP3D.Object(N_size, myObjects)
+    
+    midslice = int(0.5*N_size)
+    GROUND_TRUTH[:,midslice+(int(0.1*midslice)):-1,:] = 0.0
+    GROUND_TRUTH[:,0:midslice-(int(0.1*midslice)),:] = 0.0
+    
+    el3 = {'Obj': Objects3D.ELLIPSOID,
+          'C0' : 0.3,
+          'x0' : 0.0,
+          'y0' : 0.0,
+          'z0' : 0.0,
+          'a'  : 0.9,
+          'b'  : 0.7,
+          'c'  : 0.65,
+          'phi1': 0.0}
+    
+    myObjects2=[el3]
+    GROUND_TRUTH2 = TomoP3D.Object(N_size, myObjects2)
+    GROUND_TRUTH+=GROUND_TRUTH2
+    
+    C0_min = 0.025
+    C0_max = 0.15
     C_0 = random.uniform(C0_min, C0_max)
     a_el3_min = 0.05
     a_el3_max = 0.5
@@ -82,8 +88,8 @@ def get_phantom_params(N_size):
     phi_min = 0.0
     phi_max = 180.0
     phi1 = random.uniform(phi_min, phi_max)
-
-    el3 = {'Obj': Objects3D.CUBOID,
+    
+    el4 = {'Obj': Objects3D.CUBOID,
           'C0' : C_0,
           'x0' : x0_rand,
           'y0' : y0_rand,
@@ -92,18 +98,10 @@ def get_phantom_params(N_size):
           'b'  :  b_el3,
           'c'  :  c_el3,
           'phi1': phi1}
-
-    myObjects=[el1,el2,el3]
-    return myObjects
-
-def create_sample(dataset, N_size, output_path_recon, output_path_gt):
-    print ("Building 3D phantom using TomoPhantom software")
-    myObjects=get_phantom_params(N_size)
-
-    PHANTOM3D = TomoP3D.Object(N_size, myObjects)
-    PHANTOM3D[PHANTOM3D == 0.7] = 2
-    PHANTOM3D[(PHANTOM3D > 0.2999) & (PHANTOM3D <= 0.3)] = 3
-    PHANTOM3D[(PHANTOM3D > 0.3) & (PHANTOM3D < 0.7)] = 1
+    
+    myObjects3=[el4]
+    GROUND_TRUTH3 = TomoP3D.Object(N_size, myObjects3)
+    GROUND_TRUTH+=GROUND_TRUTH3
 
     # Projection geometry related parameters:
     Horiz_det = int(np.sqrt(2)*N_size)
@@ -112,8 +110,19 @@ def create_sample(dataset, N_size, output_path_recon, output_path_gt):
     angles = np.linspace(0.0,179.9,angles_num,dtype='float32') # in degrees
     angles_rad = angles*(np.pi/180.0)
 
-    print ("Building 3D analytical projection data with TomoPhantom")
-    projData3D_analyt = TomoP3D.ObjectSino(N_size, Horiz_det, Vert_det, angles, myObjects)
+    print ("Forward project the resulting 3D phantom")
+    RectoolsDIR = RecToolsDIR(DetectorsDimH = Horiz_det,  # DetectorsDimH # detector dimension (horizontal)
+                  DetectorsDimV = Vert_det,  # DetectorsDimV # detector dimension (vertical) for 3D case only
+                  CenterRotOffset = 0.0,   # Center of Rotation (CoR) scalar
+                  AnglesVec = angles_rad, # array of angles in radians
+                  ObjSize = N_size, # a scalar to define reconstructed object dimensions
+                  device_projector='gpu')
+
+    projData3D = RectoolsDIR.FORWPROJ(GROUND_TRUTH)
+    
+    GROUND_TRUTH[GROUND_TRUTH == 0.5] = 2
+    GROUND_TRUTH[(GROUND_TRUTH > 0.2999) & (GROUND_TRUTH <= 0.3)] = 3
+    GROUND_TRUTH[(GROUND_TRUTH > 0.3) & (GROUND_TRUTH < 0.5)] = 1
 
 
     print ("Simulate synthetic flat fields, add flat field background to the projections and add noise")
@@ -121,12 +130,10 @@ def create_sample(dataset, N_size, output_path_recon, output_path_gt):
                             'fresnel_scale_factor' : 10,
                             'fresnel_wavelenght' : 0.007}
 
-    projection_data3D_fresnel = _Artifacts_(projData3D_analyt, **_fresnel_propagator_)
+    projection_data3D_fresnel = _Artifacts_(projData3D, **_fresnel_propagator_)
 
-    #%%
-    I0  = 35000; # Source intensity
     flatsnum = 40 # the number of the flat fields required
-    intensity_fluct=random.uniform(25000, 40000)
+    intensity_fluct=random.uniform(30000, 40000)
     source_fluctuation=random.uniform(0.1, 0.25)
     [projData3D_noisy, flatsSIM] = synth_flats(projection_data3D_fresnel,
                                                source_intensity = intensity_fluct, source_variation=source_fluctuation,\
@@ -140,6 +147,17 @@ def create_sample(dataset, N_size, output_path_recon, output_path_gt):
     # normalise the data, the required format is [detectorsX, Projections, detectorsY]
     projData3D_norm = normaliser(projData3D_noisy, flatsSIM, darks=None, log='true', method='mean')
 
+    """
+    RectoolsD = RecToolsDIR(DetectorsDimH = int(Horiz_det),  # DetectorsDimH # detector dimension (horizontal)
+                        DetectorsDimV = int(N_size),  # DetectorsDimV # detector dimension (vertical) for 3D case only
+                        CenterRotOffset = 0.0, # Center of Rotation (CoR) scalar (for 3D case only)
+                        AnglesVec = angles_rad, # array of angles in radians
+                        ObjSize = int(N_size), # a scalar to define reconstructed object dimensions
+                        device_projector = 'gpu')
+
+    Recon=RectoolsD.FBP(projData3D_norm) # FBP reconstruction
+    """
+    
     print ("Reconstructing...")
     # set parameters and initiate a class object
     Rectools = RecToolsIR(DetectorsDimH = Horiz_det,     # Horizontal detector dimension
@@ -167,16 +185,7 @@ def create_sample(dataset, N_size, output_path_recon, output_path_gt):
 
     # Run FISTA reconstrucion algorithm with 3D regularisation
     Recon = Rectools.FISTA(_data_, _algorithm_, _regularisation_)
-    """
-    RectoolsD = RecToolsDIR(DetectorsDimH = int(Horiz_det),  # DetectorsDimH # detector dimension (horizontal)
-                        DetectorsDimV = int(N_size),  # DetectorsDimV # detector dimension (vertical) for 3D case only
-                        CenterRotOffset = 0.0, # Center of Rotation (CoR) scalar (for 3D case only)
-                        AnglesVec = angles_rad, # array of angles in radians
-                        ObjSize = int(N_size), # a scalar to define reconstructed object dimensions
-                        device_projector = 'gpu')
 
-    Recon=RectoolsD.FBP(projData3D_norm) # FBP reconstruction
-    """
     print ("Saving the images")
     for n in range(Recon.shape[1]):
         # save image
@@ -186,19 +195,19 @@ def create_sample(dataset, N_size, output_path_recon, output_path_gt):
         im = Image.fromarray(im)
         im.save(filename)
 
-    for n in range(PHANTOM3D.shape[1]):
+    for n in range(GROUND_TRUTH.shape[1]):
         # save image
         filename = output_path_gt + str(dataset) + "_gt_" + str(n).zfill(5) + ".tif"
-        im = PHANTOM3D[n,:,:]
+        im = GROUND_TRUTH[n,:,:]
         im = Image.fromarray(im.astype(np.uint8))
         im.save(filename)
 
 def get_args():
     parser = argparse.ArgumentParser(description='Create the folder with the training data',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-i', '--images', metavar='IMAGES', dest='dir_img',
+    parser.add_argument('-i', '--images', metavar='IMAGES', dest='dir_img', type=str, default='recon/',
                         help='Folder where the ouput images will be stored')
-    parser.add_argument( '-m', '--masks', metavar='MASKS', dest='dir_mask',
+    parser.add_argument( '-m', '--masks', metavar='MASKS', dest='dir_mask', type=str, default='gt/',
                         help='Folder where the ouput masks will be stored')
     parser.add_argument('-n', '--n_datasets', dest='n_datasets',
                         help='Number of datasets to be generated')
@@ -208,7 +217,6 @@ def get_args():
                         help='Number of angles')
 
     return parser.parse_args()
-
 
 
 if __name__ == '__main__':
