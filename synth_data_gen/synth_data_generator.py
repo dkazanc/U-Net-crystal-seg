@@ -28,7 +28,7 @@ def normalise_im(im):
 
 def create_sample(dataset, N_size, total_angles, output_path_recon, output_path_gt):
     print ("Building 3D phantom using TomoPhantom software")
-    
+
     el1 = {'Obj': Objects3D.ELLIPSOID,
           'C0' : 0.2,
           'x0' : 0.0,
@@ -38,7 +38,7 @@ def create_sample(dataset, N_size, total_angles, output_path_recon, output_path_
           'b'  : 0.65,
           'c'  : 0.6,
           'phi1': 0.0}
-    
+
     el2 = {'Obj': Objects3D.ELLIPSOID,
           'C0' : -0.2,
           'x0' : 0.0,
@@ -48,14 +48,14 @@ def create_sample(dataset, N_size, total_angles, output_path_recon, output_path_
           'b'  : 0.5,
           'c'  : 0.5,
           'phi1': 0.0}
-    
+
     myObjects=[el1,el2]
     GROUND_TRUTH = TomoP3D.Object(N_size, myObjects)
-    
+
     midslice = int(0.5*N_size)
     GROUND_TRUTH[:,midslice+(int(0.1*midslice)):-1,:] = 0.0
     GROUND_TRUTH[:,0:midslice-(int(0.1*midslice)),:] = 0.0
-    
+
     el3 = {'Obj': Objects3D.ELLIPSOID,
           'C0' : 0.3,
           'x0' : 0.0,
@@ -65,11 +65,11 @@ def create_sample(dataset, N_size, total_angles, output_path_recon, output_path_
           'b'  : 0.7,
           'c'  : 0.65,
           'phi1': 0.0}
-    
+
     myObjects2=[el3]
     GROUND_TRUTH2 = TomoP3D.Object(N_size, myObjects2)
     GROUND_TRUTH+=GROUND_TRUTH2
-    
+
     C0_min = 0.025
     C0_max = 0.15
     C_0 = random.uniform(C0_min, C0_max)
@@ -88,7 +88,7 @@ def create_sample(dataset, N_size, total_angles, output_path_recon, output_path_
     phi_min = 0.0
     phi_max = 180.0
     phi1 = random.uniform(phi_min, phi_max)
-    
+
     el4 = {'Obj': Objects3D.CUBOID,
           'C0' : C_0,
           'x0' : x0_rand,
@@ -98,7 +98,7 @@ def create_sample(dataset, N_size, total_angles, output_path_recon, output_path_
           'b'  :  b_el3,
           'c'  :  c_el3,
           'phi1': phi1}
-    
+
     myObjects3=[el4]
     GROUND_TRUTH3 = TomoP3D.Object(N_size, myObjects3)
     GROUND_TRUTH+=GROUND_TRUTH3
@@ -117,9 +117,11 @@ def create_sample(dataset, N_size, total_angles, output_path_recon, output_path_
                   ObjSize = N_size, # a scalar to define reconstructed object dimensions
                   device_projector='gpu')
 
+
+    GROUND_TRUTH[GROUND_TRUTH == 0.5] = 0.05
     projData3D = RectoolsDIR.FORWPROJ(GROUND_TRUTH)
-    
-    GROUND_TRUTH[GROUND_TRUTH == 0.5] = 2
+
+    GROUND_TRUTH[GROUND_TRUTH == 0.05] = 2
     GROUND_TRUTH[(GROUND_TRUTH > 0.2999) & (GROUND_TRUTH <= 0.3)] = 3
     GROUND_TRUTH[(GROUND_TRUTH > 0.3) & (GROUND_TRUTH < 0.5)] = 1
 
@@ -156,7 +158,7 @@ def create_sample(dataset, N_size, total_angles, output_path_recon, output_path_
 
     Recon=RectoolsD.FBP(projData3D_norm) # FBP reconstruction
     """
-    
+
     print ("Reconstructing...")
     # set parameters and initiate a class object
     Rectools = RecToolsIR(DetectorsDimH = Horiz_det,     # Horizontal detector dimension
@@ -185,12 +187,12 @@ def create_sample(dataset, N_size, total_angles, output_path_recon, output_path_
     # Run FISTA reconstrucion algorithm with 3D regularisation
     Recon = Rectools.FISTA(_data_, _algorithm_, _regularisation_)
 
+    Recon=normalise_im(Recon)*65535
     print ("Saving the images")
     for n in range(Recon.shape[1]):
         # save image
         filename = output_path_recon + str(dataset) + "_recon_" + str(n).zfill(5) + ".tif"
-        im = Recon[n,:,:].astype(np.float64)
-        im = normalise_im(im)
+        im = Recon[n,:,:].astype(np.uint16)
         im = Image.fromarray(im)
         im.save(filename)
 
