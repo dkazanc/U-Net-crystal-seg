@@ -1,4 +1,4 @@
-# U-net segmentation of macromolecular crystallography tomographic data
+# U-net segmentation of synthetic and real macromolecular crystallography tomographic data
 
 ## Description:
 This is a Pytorch implementation of U-net semantic segmentation adapted from this [repository](https://github.com/milesial/Pytorch-UNet) to the case of segmenting macromolecular crystallography tomographic data.
@@ -10,7 +10,7 @@ python synth_data_gen/synth_data_generator.py -i OUTPUT_PATH_TO_RECON -m OUTPUT_
 ```
 * Script to generate 3 axes for training from the result of the synthetic data generator:
 ```
-python utils/3axes_generator.py -i PATH_TO_DATASET -o OUTPUT_PATH -d NAME_OF_DATASET
+python utils/3axes_generator.py -i PATH_TO_DATASET -o OUTPUT_PATH -d NAME_OF_DATASET -n NUMBER_of_DATASETS
 ```
 
 ### Installation (Linux):

@@ -82,23 +82,20 @@ if __name__ == '__main__':
     print("Loading images into the memory, one volume after another...")
     for tot_volumes in range(volumes_tot_number):
         print(f"{tot_volumes} volume is processed")
-        #check the length of the number and generate a start of the new volume signature
-        if (len(str(volumes_tot_number))==1):
-            first_image_digits='0000'+ str(tot_volumes)
-        elif (len(str(volumes_tot_number))==2):
-            first_image_digits='000'+ str(tot_volumes)
-        elif (len(str(volumes_tot_number))==3):
-            first_image_digits='00'+ str(tot_volumes)
-        elif (len(str(volumes_tot_number))==4):
-            first_image_digits='0'+ str(tot_volumes)
+        if (tot_volumes < 10):
+            five_image_digits = '0000' + str(tot_volumes)
+        elif (10 <= tot_volumes < 100):
+            five_image_digits = '000' + str(tot_volumes)
+        elif (100 <= tot_volumes < 1000):
+            five_image_digits = '00' + str(tot_volumes)
         else:
-            first_image_digits=str(tot_volumes)
+            five_image_digits = str(tot_volumes)
 
         sample = []
         segment = []
         for filename in sorted(glob.glob(recon_path + "*")):
             basename=os.path.basename(filename)
-            if (str(basename[0:5])==first_image_digits):
+            if (str(basename[0:5])==five_image_digits):
                 sample.append(np.array(Image.open(filename)))
         sample = np.array(sample)
         if sample.dtype == np.float32:
@@ -106,7 +103,7 @@ if __name__ == '__main__':
             exit()
         for filename in sorted(glob.glob(gt_path + "*")):
             basename=os.path.basename(filename)
-            if (str(basename[0:5])==first_image_digits):
+            if (str(basename[0:5])==five_image_digits):
                 segment.append(np.array(Image.open(filename)))
         segment = np.array(segment)
         print("Done!")
