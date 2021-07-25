@@ -23,13 +23,14 @@ def train_net(net,
               batch_size=1,
               lr=0.001,
               val_percent=0.1,
+              cropvalue=100,
               save_cp=True,
-              img_scale=0.5,
+              img_scale=1.0,
               dir_img='',
               dir_mask='',
               dir_checkpoint=''):
 
-    dataset = BasicDataset(dir_img, dir_mask, img_scale)
+    dataset = BasicDataset(dir_img, dir_mask, cropvalue, img_scale)
     n_val = int(len(dataset) * val_percent)
     n_train = len(dataset) - n_val
     train, val = random_split(dataset, [n_train, n_val])
@@ -139,16 +140,18 @@ def get_args():
                         help='Load model from a .pth file')
     parser.add_argument('-s', '--scale', dest='scale', type=float, default=1, #0.5
                         help='Downscaling factor of the images')
+    parser.add_argument('-cr', '--cropvalue', dest='cropvalue', type=int, default=100,
+                        help='Croping value to work with cropped input images')
     parser.add_argument('-v', '--validation', dest='val', type=float, default=10.0,
                         help='Percent of the data that is used as validation (0-100)')
-    parser.add_argument('-i', '--dir_img', dest='dir_img', type=str, default='/dls/tmp/lqg38422/TRAIN/recon/',
+    parser.add_argument('-i', '--dir_img', dest='dir_img', type=str, default='/recon/',
                         help='Path to the folder containing the images')
-    parser.add_argument('-m', '--dir_mask', dest='dir_mask', type=str, default='/dls/tmp/lqg38422/TRAIN/gt/',
+    parser.add_argument('-m', '--dir_mask', dest='dir_mask', type=str, default='/gt/',
                         help='Path to the folder containing the masks')
     parser.add_argument('-c', '--dir_checkpoint', dest='dir_checkpoint', type=str, default='checkpoints/',
                         help='Path to the folder where checkpoints will be stored')
     parser.add_argument('-gpu', '--gpu_num', dest='gpu_num', type=int, default=0,
-                        help='Number of the GPU to be used')   
+                        help='Number of the GPU to be used')
 
     return parser.parse_args()
 
@@ -190,6 +193,7 @@ if __name__ == '__main__':
                   device=device,
                   img_scale=args.scale,
                   val_percent=args.val / 100,
+                  cropvalue=args.cropvalue,
                   dir_img=args.dir_img,
                   dir_mask=args.dir_mask,
                   dir_checkpoint=args.dir_checkpoint
