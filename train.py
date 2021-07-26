@@ -25,7 +25,7 @@ def train_net(net,
               val_percent=0.1,
               cropvalue=100,
               save_cp=True,
-              img_scale=1.0,
+              img_scale=0.5,
               dir_img='',
               dir_mask='',
               dir_checkpoint=''):

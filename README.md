@@ -3,7 +3,7 @@
 ## Description:
 This is a Pytorch implementation of U-net semantic segmentation adapted from this [repository](https://github.com/milesial/Pytorch-UNet) to the case of segmenting macromolecular crystallography tomographic data.
 
-### Using synthetic data generator, trainer and predictor:
+### Synthetic data generator
 * [Synthetic data generator](https://github.com/dkazanc/U-Net-crystal-seg/blob/main/synth_data_gen/synth_data_generator.py) script uses [Tomophantom](https://github.com/dkazanc/TomoPhantom) package to generate multiple 3D phantoms then adds realistic imaging artifacts to the projection data and apply [ToMoBAR](https://github.com/dkazanc/ToMoBAR) package to iteratively reconstruct. The resulting data for ground truth masks and the reconstructed images saved into image stacks. From the main folder run:
 ```
 python synth_data_gen/synth_data_generator.py -i OUTPUT_PATH_to_RECON -m OUTPUT_PATH_to_MASKS -n NUMBER_of_DATASETS -s RECON_SIZE -a TOTAL_PROJECTIONS_NUMBER
@@ -12,10 +12,15 @@ python synth_data_gen/synth_data_generator.py -i OUTPUT_PATH_to_RECON -m OUTPUT_
 ```
 python utils/3axes_generator.py -i PATH_to_DATASET -o OUTPUT_PATH -d NAME_of_DATASET -n NUMBER_of_DATASETS
 ```
+### U-net training
 * After synthetic data has been generated you can train the model:
 ```
 python train.py -e NUMBER_of_EPOCHS -b BATCH_SIZE -l LEARNING_RATE -i PATH_to_DATASET -m PATH_to_MASKS -c PATH_to_CHECKPOINTS -cr CROPPING_SIZE
 ```
+* One can use Tensorboard to check the loss and the learning rate `tensorboard --logdir=./ --bind_all`
+
+### Prediction
+
 ### Installation (Linux):
 * Git clone the repo: `git clone https://github.com/dkazanc/U-Net-crystal-seg.git`
 * Install miniconda and use conda explicit file to install all required packages into the `unet_pytorch` environment:
