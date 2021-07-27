@@ -6,9 +6,15 @@ This code is adapted to the case of tomographic data semantic multi-class segmen
 ### Synthetic data generator
 *Synthetic data generator* uses [Tomophantom](https://github.com/dkazanc/TomoPhantom) package to generate multiple 3D phantoms with random features and tomographic (parallel-beam) projection data with realistic imaging artifacts (distortions, rings and noise). Then [ToMoBAR](https://github.com/dkazanc/ToMoBAR) package is used to directly (FBP) or iteratively reconstruct. The resulting data for ground truth masks and the reconstructed images are saved into image stacks.
 
-* Start with simulating tomographic reconstructions and masks by running the script `bash run_scripts/data_generator.sh`. Change the parameters and the reconstruction method as suited inside the script.
+* Start with simulating tomographic reconstructions and masks by running the script. Change the parameters and the reconstruction method as suited inside the script.
+```
+bash run_scripts/data_generator.sh
+```
 
-* The next script will create 3 axes (XY, YZ, XZ) data from the generated XY data, hence delivering more data to train on. `bash run_scripts/reslicer3.sh`
+* The next script will create 3 axes (XY, YZ, XZ) data from the generated XY data, hence delivering more data to train on.
+```
+bash run_scripts/reslicer3.sh
+```
 
 ### U-net training
 * After synthetic data has been generated you can train the model:
