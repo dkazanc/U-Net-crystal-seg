@@ -11,17 +11,17 @@ import random
 
 
 class BasicDataset(Dataset):
-    def __init__(self, imgs_dir, masks_dir, cropvalue, scale=1, mask_suffix='gt'):
+    def __init__(self, imgs_dir, masks_dir, centercrop, scale, mask_suffix='gt'):
         self.imgs_dir = imgs_dir
         self.masks_dir = masks_dir
         self.scale = scale
         assert 0 < scale <= 1, 'Scale must be between 0 and 1'
         self.mask_suffix = mask_suffix
-        self.imgs_files = glob(imgs_dir + "*")
-        self.mask_files = glob(masks_dir + "*")
+        self.imgs_files = sorted(glob(imgs_dir + "*"))
+        self.mask_files = sorted(glob(masks_dir + "*"))
         logging.info(f'Creating dataset with {len(self.imgs_files)} examples')
         self.transform = T.Compose([
-            T.CenterCrop(cropvalue) # ALL IMAGES WILL BE PADDED/CROPPED TO NxN SHAPE
+            T.CenterCrop(centercrop)
         ])
 
     def __len__(self):
@@ -61,21 +61,17 @@ class BasicDataset(Dataset):
             f'Image {img_file} and mask {mask_file} should be the same size, but are {img.size} and {mask.size}'
 
         # Transformations need to be done to PIL Images
-        # Padding/cropping
         if self.transform:
             img = self.transform(img)
             mask = self.transform(mask)
 
-        # Flip
         if random.random() > 0.5:
             image = T.functional.hflip(img)
             mask = T.functional.hflip(mask)
 
-        # Normalise and correct dimensions
         img = self.preprocess(img, self.scale, mode="img").astype(np.float32)
         mask = self.preprocess(mask, self.scale, mode="mask")
 
-        # Convert to torch tensors
         img = torch.from_numpy(img).type(torch.FloatTensor)
         mask = torch.from_numpy(mask).type(torch.FloatTensor)
 

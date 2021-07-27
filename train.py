@@ -16,21 +16,20 @@ from torch.utils.tensorboard import SummaryWriter
 from utils.dataset import BasicDataset
 from torch.utils.data import DataLoader, random_split
 
-
 def train_net(net,
               device,
               epochs=5,
               batch_size=1,
               lr=0.001,
               val_percent=0.1,
-              cropvalue=100,
+              centercrop=128,
               save_cp=True,
-              img_scale=0.5,
+              img_scale=1,
               dir_img='',
               dir_mask='',
               dir_checkpoint=''):
 
-    dataset = BasicDataset(dir_img, dir_mask, cropvalue, img_scale)
+    dataset = BasicDataset(dir_img, dir_mask, centercrop, img_scale)
     n_val = int(len(dataset) * val_percent)
     n_train = len(dataset) - n_val
     train, val = random_split(dataset, [n_train, n_val])
@@ -57,11 +56,13 @@ def train_net(net,
     optimizer = optim.RMSprop(net.parameters(), lr=lr, weight_decay=1e-8, momentum=0.9)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min' if net.n_classes > 1 else 'max', patience=2)
     if net.n_classes > 1:
+        #weight = None
+        #weight = torch.tensor([0.2,0.8,0.6,0.6]).cuda()
+        #criterion = DiceLoss(weight=weight)
         criterion = nn.CrossEntropyLoss()
     else:
         criterion = nn.BCEWithLogitsLoss()
 
-    torch.cuda.empty_cache()
     for epoch in range(epochs):
         net.train()
 
@@ -140,13 +141,13 @@ def get_args():
                         help='Load model from a .pth file')
     parser.add_argument('-s', '--scale', dest='scale', type=float, default=1, #0.5
                         help='Downscaling factor of the images')
-    parser.add_argument('-cr', '--cropvalue', dest='cropvalue', type=int, default=100,
-                        help='Croping value to work with cropped input images')
+    parser.add_argument('-crop', '--centercrop', dest='centercrop', type=int,
+                        help='Croping input images')                        
     parser.add_argument('-v', '--validation', dest='val', type=float, default=10.0,
                         help='Percent of the data that is used as validation (0-100)')
-    parser.add_argument('-i', '--dir_img', dest='dir_img', type=str, default='/recon/',
+    parser.add_argument('-i', '--dir_img', dest='dir_img', type=str, default='/dls/tmp/lqg38422/TRAIN/recon/',
                         help='Path to the folder containing the images')
-    parser.add_argument('-m', '--dir_mask', dest='dir_mask', type=str, default='/gt/',
+    parser.add_argument('-m', '--dir_mask', dest='dir_mask', type=str, default='/dls/tmp/lqg38422/TRAIN/gt/',
                         help='Path to the folder containing the masks')
     parser.add_argument('-c', '--dir_checkpoint', dest='dir_checkpoint', type=str, default='checkpoints/',
                         help='Path to the folder where checkpoints will be stored')
@@ -193,7 +194,7 @@ if __name__ == '__main__':
                   device=device,
                   img_scale=args.scale,
                   val_percent=args.val / 100,
-                  cropvalue=args.cropvalue,
+                  centercrop=args.centercrop,
                   dir_img=args.dir_img,
                   dir_mask=args.dir_mask,
                   dir_checkpoint=args.dir_checkpoint

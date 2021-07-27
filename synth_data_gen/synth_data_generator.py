@@ -134,8 +134,8 @@ def create_sample(dataset, N_size, total_angles, output_path_recon, output_path_
     projection_data3D_fresnel = _Artifacts_(projData3D, **_fresnel_propagator_)
 
     flatsnum = 40 # the number of the flat fields required
-    intensity_fluct=random.uniform(30000, 40000)
-    source_fluctuation=random.uniform(0.1, 0.25)
+    intensity_fluct=random.uniform(20000, 40000)
+    source_fluctuation=random.uniform(0.01, 0.02)
     [projData3D_noisy, flatsSIM] = synth_flats(projection_data3D_fresnel,
                                                source_intensity = intensity_fluct, source_variation=source_fluctuation,\
                                                arguments_Bessel = (1,10,10,12),\
