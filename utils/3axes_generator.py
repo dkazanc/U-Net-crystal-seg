@@ -14,7 +14,6 @@ import time
 """
 Script to generate 3 sets of image stacks for different slicing, the input data should have
 "recon" and "gt" folders
-Usage >>>> python 3axes_generator.py -i PATH_TO_DATASET -o OUTPUT_PATH -d NAME_OF_DATASET -n NUMBER_of_DATASETS
 Authors:
 Gerard Jover Pujol
 Daniil Kazantsev

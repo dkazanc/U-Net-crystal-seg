@@ -1,7 +1,6 @@
 """
-Script to generate synthetic data and then reconstruct it  using various imaging artifacts
-The data generated is to replicate X-ray macromolecular data
-Usage >>>> python synth_data_generator.py -i OUTPUT_PATH_TO_RECON -m OUTPUT_PATH_TO_MASKS -n NUMBER_of_DATASETS -s RECON_SIZE -a TOTAL_PROJECTIONS_NUMBER
+Script to generate synthetic distorted and noisy data and then reconstruct it using FBP or Iterative algorithm
+
 Authors:
 Daniil Kazantsev
 Gerard Jover Pujol
@@ -26,7 +25,7 @@ import random
 def normalise_im(im):
     return (im - im.min())/(im.max() - im.min())
 
-def create_sample(dataset, N_size, total_angles, output_path_recon, output_path_gt):
+def create_sample(dataset, N_size, total_angles, output_path_recon, output_path_gt, algorithm):
     print ("Building 3D phantom using TomoPhantom software")
 
     el1 = {'Obj': Objects3D.ELLIPSOID,
@@ -148,44 +147,44 @@ def create_sample(dataset, N_size, total_angles, output_path_recon, output_path_
     # normalise the data, the required format is [detectorsX, Projections, detectorsY]
     projData3D_norm = normaliser(projData3D_noisy, flatsSIM, darks=None, log='true', method='mean')
 
-    """
-    RectoolsD = RecToolsDIR(DetectorsDimH = int(Horiz_det),  # DetectorsDimH # detector dimension (horizontal)
-                        DetectorsDimV = int(N_size),  # DetectorsDimV # detector dimension (vertical) for 3D case only
-                        CenterRotOffset = 0.0, # Center of Rotation (CoR) scalar (for 3D case only)
-                        AnglesVec = angles_rad, # array of angles in radians
-                        ObjSize = int(N_size), # a scalar to define reconstructed object dimensions
-                        device_projector = 'gpu')
-
-    Recon=RectoolsD.FBP(projData3D_norm) # FBP reconstruction
-    """
-
     print ("Reconstructing...")
-    # set parameters and initiate a class object
-    Rectools = RecToolsIR(DetectorsDimH = Horiz_det,     # Horizontal detector dimension
-                        DetectorsDimV = N_size,        # Vertical detector dimension (3D case)
-                        CenterRotOffset = None,          # Center of Rotation scalar or a vector
-                        AnglesVec = angles_rad,          # A vector of projection angles in radians
-                        ObjSize = N_size,                # Reconstructed object dimensions (scalar)
-                        datafidelity='LS',               # Data fidelity, choose from LS, KL, PWLS
-                        device_projector='gpu')
 
-    _data_ = {'projection_norm_data' : projData3D_norm,
-              'OS_number' : 6} # data dictionary
+    if (algorithm == "FBP"):
+        RectoolsD = RecToolsDIR(DetectorsDimH = int(Horiz_det),  # DetectorsDimH # detector dimension (horizontal)
+                            DetectorsDimV = int(N_size),  # DetectorsDimV # detector dimension (vertical) for 3D case only
+                            CenterRotOffset = 0.0, # Center of Rotation (CoR) scalar (for 3D case only)
+                            AnglesVec = angles_rad, # array of angles in radians
+                            ObjSize = int(N_size), # a scalar to define reconstructed object dimensions
+                            device_projector = 'gpu')
 
-    lc = Rectools.powermethod(_data_) # calculate Lipschitz constant (run once to initialise)
+        Recon=RectoolsD.FBP(projData3D_norm) # FBP reconstruction
+    else:
+        # set parameters and initiate a class object
+        Rectools = RecToolsIR(DetectorsDimH = Horiz_det,     # Horizontal detector dimension
+                            DetectorsDimV = N_size,        # Vertical detector dimension (3D case)
+                            CenterRotOffset = None,          # Center of Rotation scalar or a vector
+                            AnglesVec = angles_rad,          # A vector of projection angles in radians
+                            ObjSize = N_size,                # Reconstructed object dimensions (scalar)
+                            datafidelity='LS',               # Data fidelity, choose from LS, KL, PWLS
+                            device_projector='gpu')
 
-    # Run FISTA reconstrucion algorithm without regularisation
-    _algorithm_ = {'iterations' : 20,
-                   'lipschitz_const' : lc}
+        _data_ = {'projection_norm_data' : projData3D_norm,
+                  'OS_number' : 6} # data dictionary
 
-    # adding regularisation using the CCPi regularisation toolkit
-    _regularisation_ = {'method' : 'PD_TV',
-                        'regul_param' :0.00001,
-                        'iterations' : 80,
-                        'device_regulariser': 'gpu'}
+        lc = Rectools.powermethod(_data_) # calculate Lipschitz constant (run once to initialise)
 
-    # Run FISTA reconstrucion algorithm with 3D regularisation
-    Recon = Rectools.FISTA(_data_, _algorithm_, _regularisation_)
+        # Run FISTA reconstrucion algorithm without regularisation
+        _algorithm_ = {'iterations' : 20,
+                       'lipschitz_const' : lc}
+
+        # adding regularisation using the CCPi regularisation toolkit
+        _regularisation_ = {'method' : 'PD_TV',
+                            'regul_param' :0.00001,
+                            'iterations' : 80,
+                            'device_regulariser': 'gpu'}
+
+        # Run FISTA reconstrucion algorithm with 3D regularisation
+        Recon = Rectools.FISTA(_data_, _algorithm_, _regularisation_)
 
     Recon=normalise_im(Recon)*65535
     print ("Saving the images")
@@ -216,7 +215,8 @@ def get_args():
                         help='Size of the data generated')
     parser.add_argument('-a', '--angles', dest='angles', default=800,
                         help='Number of angles')
-
+    parser.add_argument('-alg', '--algorithm', dest='algorithm', default='FBP',
+                        help='Reconstruction algorithm to choose')
     return parser.parse_args()
 
 
@@ -229,6 +229,7 @@ if __name__ == '__main__':
                  f'\tImage output directory : {args.dir_img}\n'
                  f'\tMask output directory : {args.dir_mask}\n'
                  f'\tNumber of datasets : {args.n_datasets}\n'
+                 f'\tThe selected algorithm is : {args.algorithm}\n'
                  f'\tSize : {args.size}\n')
 
     dataset = "00000"
@@ -237,8 +238,9 @@ if __name__ == '__main__':
     total_angles = int(args.angles)
     output_path_recon = args.dir_img
     output_path_gt = args.dir_mask
+    algorithm = args.algorithm
 
     for i in range(N_datasets):
         print("Creating dataset", dataset)
-        create_sample(dataset, N_size, total_angles, output_path_recon, output_path_gt)
+        create_sample(dataset, N_size, total_angles, output_path_recon, output_path_gt, algorithm)
         dataset = str(i+1).zfill(5)

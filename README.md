@@ -4,14 +4,12 @@
 This code is adapted to the case of tomographic data semantic multi-class segmentation using the [Pytorch-UNet](https://github.com/milesial/Pytorch-UNet) repository. The 3D tomographic data for training is simulated with distortions and noise and then directly or iteratively reconstructed. U-net is then used to train on the reconstructed data and the ground truth masks to produce a trained model. The generated test data then predicted (segmented) while using the model.
 
 ### Synthetic data generator
-* [Synthetic data generator](https://github.com/dkazanc/U-Net-crystal-seg/blob/main/synth_data_gen/synth_data_generator.py) script uses [Tomophantom](https://github.com/dkazanc/TomoPhantom) package to generate multiple 3D phantoms then adds realistic imaging artifacts to the projection data and apply [ToMoBAR](https://github.com/dkazanc/ToMoBAR) package to iteratively reconstruct. The resulting data for ground truth masks and the reconstructed images saved into image stacks. From the main folder run:
-```
-python synth_data_gen/synth_data_generator.py -i OUTPUT_PATH_to_RECON -m OUTPUT_PATH_to_MASKS -n NUMBER_of_DATASETS -s RECON_SIZE -a TOTAL_PROJECTIONS_NUMBER
-```
-* Script to generate 3 axes for training from the result of the synthetic data generator:
-```
-python utils/3axes_generator.py -i PATH_to_DATASET -o OUTPUT_PATH -d NAME_of_DATASET -n NUMBER_of_DATASETS -s ONE_or_THREE_FOLDERS
-```
+*Synthetic data generator* uses [Tomophantom](https://github.com/dkazanc/TomoPhantom) package to generate multiple 3D phantoms with random features and tomographic (parallel-beam) projection data with realistic imaging artifacts (distortions, rings and noise). Then [ToMoBAR](https://github.com/dkazanc/ToMoBAR) package is used to directly (FBP) or iteratively reconstruct. The resulting data for ground truth masks and the reconstructed images are saved into image stacks.
+
+* Start with simulating tomographic reconstructions and masks by running the script `bash run_scripts/data_generator.sh`. Change the parameters and the reconstruction method as suited inside the script.
+
+* The next script will create 3 axes (XY, YZ, XZ) data from the generated XY data, hence delivering more data to train on. `bash run_scripts/reslicer3.sh`
+
 ### U-net training
 * After synthetic data has been generated you can train the model:
 ```
@@ -28,6 +26,8 @@ tensorboard --logdir=./ --bind_all
 ```
 python predict.py -i PATH_to_TESTDATA -o OUTPUT_PATH -m PATH_to_MODEL
 ```
+### Requirements:
+A Linux machine with a GPU card. Permissions to write into disk are required.
 
 ### Installation (Linux):
 * Git clone the repo: `git clone https://github.com/dkazanc/U-Net-crystal-seg.git`
