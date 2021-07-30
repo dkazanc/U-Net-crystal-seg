@@ -10,13 +10,3 @@ save_style="one" # specify how the data needs to be saved, into "one" folder or 
 echo "Begin reslicing of training data"
 python utils/3axes_generator.py -i $path_to_datasets -o $output_path_to_resliced_data -d $name_of_the_dataset -n $number_of_datasets -s $save_style
 echo "Reslicing complete"
-
-#############################################
-path_to_datasets="../DATA_UNET_TOMO/TESTDATA/"
-output_path_to_resliced_data="../DATA_UNET_TOMO/TESTDATA/"
-name_of_the_dataset="resliced"
-number_of_datasets=1 # specify how many datasets you want to reslice
-
-echo "Begin reslicing of test data"
-python utils/3axes_generator.py -i $path_to_datasets -o $output_path_to_resliced_data -d $name_of_the_dataset -n $number_of_datasets -s $save_style
-echo "Reslicing complete"

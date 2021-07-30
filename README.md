@@ -17,38 +17,35 @@ conda create --name unet_pytorch --file conda_environment/spec_unet_pytorch.txt
 ### Synthetic data generator
 *Synthetic data generator* uses [Tomophantom](https://github.com/dkazanc/TomoPhantom) package to generate multiple 3D phantoms with random features and tomographic (parallel-beam) projection data with realistic imaging artifacts (distortions, rings and noise). Then [ToMoBAR](https://github.com/dkazanc/ToMoBAR) package is used to directly (FBP) or iteratively reconstruct. The resulting data for ground truth masks and the reconstructed images are saved into image stacks.
 
-* Start with simulating tomographic reconstructions and masks by running the script. Change the parameters and the reconstruction method as suited inside the script.
+Start with simulating tomographic reconstructions and masks by running the script. Change the parameters and the reconstruction method as suited inside the script.
 ```
 bash run_scripts/data_generator.sh
 ```
 
-* The next script will create slices for 3 axes (XY, YZ, XZ) from the generated XY data, hence providing more data to train on.
+The next script will create slices for 3 axes (XY, YZ, XZ) from the generated XY data, hence providing more data to train on.
 ```
 bash run_scripts/reslicer3.sh
 ```
 
 ### U-net training
-* After synthetic data has been generated one can train the U-net model:
+After synthetic data has been generated one can train the U-net model:
 ```
 bash run_scripts/training.sh
 ```
-* One can use Tensorboard to check the loss decrease and the learning rate
+
+One can use Tensorboard to check the loss decrease and the learning rate
 ```
 tensorboard --logdir=./ --bind_all
 ```
 
 ### Prediction
-
-* After training, one can apply the resulting model (a checkpoint) to the test data:
+After training, one can apply the resulting model (a checkpoint) to the test data for all axes then merge the result:
 ```
 bash run_scripts/prediction.sh
 ```
 
-### Merging predictions
-Now it is a matter of merging the resulting predictions for different axes.
-
 ### Evaluating
-One can evaluate the result of the prediction by calculating the following metrics
+One can evaluate the result of the prediction by calculating the following metrics:
 
 
 #### Software dependencies:

@@ -60,7 +60,7 @@ def get_args():
 
 
 def get_output_filenames(args):
-    in_files = glob.glob(args.input + "*")
+    in_files = sorted(glob.glob(args.input + "*"))
     out_files = []
     
     for f in in_files:
@@ -77,7 +77,7 @@ def mask_to_image(mask):
 
 if __name__ == "__main__":
     args = get_args()
-    in_files = glob.glob(args.input + "*")
+    in_files = sorted(glob.glob(args.input + "*"))
     out_files = get_output_filenames(args)
     
     print("Number of files:", len(in_files))

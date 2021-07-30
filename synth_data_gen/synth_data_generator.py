@@ -69,17 +69,17 @@ def create_sample(dataset, N_size, total_angles, output_path_recon, output_path_
     GROUND_TRUTH2 = TomoP3D.Object(N_size, myObjects2)
     GROUND_TRUTH+=GROUND_TRUTH2
 
-    C0_min = 0.025
-    C0_max = 0.15
+    C0_min = 0.07
+    C0_max = 0.25
     C_0 = random.uniform(C0_min, C0_max)
-    a_el3_min = 0.05
-    a_el3_max = 0.5
+    a_el3_min = 0.15
+    a_el3_max = 0.57
     a_el3 = random.uniform(a_el3_min, a_el3_max)
-    b_el3_min = 0.05
-    b_el3_max = 0.5
+    b_el3_min = 0.15
+    b_el3_max = 0.57
     b_el3 = random.uniform(b_el3_min, b_el3_max)
-    c_el3_min = 0.05
-    c_el3_max = 0.5
+    c_el3_min = 0.15
+    c_el3_max = 0.57
     c_el3 = random.uniform(c_el3_min, c_el3_max)
     x0_rand = random.uniform(-0.1, 0.1)
     y0_rand = random.uniform(-0.1, 0.1)
