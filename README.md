@@ -1,5 +1,9 @@
 # Deep learning segmentation of synthetic and real tomographic data using Pytorch U-net
 
+<div align="center">
+  <img src="docs/synth_pred.png" width="550">
+</div>
+
 ## Description:
 This code is adapted to the case of tomographic data semantic multi-class segmentation using the [Pytorch-UNet](https://github.com/milesial/Pytorch-UNet) repository. The 3D tomographic data for training is simulated with distortions and noise and then directly or iteratively reconstructed. U-net is then used to train on the reconstructed data and the ground truth masks to produce a trained model. The generated test data then predicted (segmented) while using the model.
 
@@ -35,7 +39,7 @@ bash run_scripts/training.sh
 
 One can use Tensorboard to check the loss decrease and the learning rate
 ```
-tensorboard --logdir=./ --bind_all
+tensorboard --logdir=runs/ --bind_all
 ```
 
 ### Prediction

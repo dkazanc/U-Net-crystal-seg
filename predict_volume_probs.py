@@ -25,10 +25,10 @@ def predict_img(net,
 
     img = img.unsqueeze(1)
     img = img.to(device=device, dtype=torch.float32)
-    
+
     with torch.no_grad():
         output = net(img)
-        
+
         if net.n_classes > 1:
             probs = F.softmax(output, dim=1)
         else:
@@ -36,7 +36,7 @@ def predict_img(net,
 
         if len(probs.shape) == 4:
             probs = probs.squeeze(0)
- 
+
         full_mask = probs.squeeze().cpu().numpy()
 
     return full_mask
@@ -50,7 +50,7 @@ def get_args():
                         help="Specify the file in which the model is stored")
     parser.add_argument('--input', '-i', metavar='INPUT',
                         help='Folder of input images (/path/to/input/)', required=True)
-    parser.add_argument('--output', '-o', metavar='OUTPUT', 
+    parser.add_argument('--output', '-o', metavar='OUTPUT',
                         help='Folder of output images (/path/to/output/)')
     parser.add_argument('--scale', '-s', type=float,
                         help="Scale factor for the input images",
@@ -62,7 +62,7 @@ def get_args():
 def get_output_filenames(args):
     in_files = sorted(glob.glob(args.input + "*"))
     out_files = []
-    
+
     for f in in_files:
         pathsplit = os.path.splitext(f)
         filename = pathsplit[0].split("/")[-1]
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     args = get_args()
     in_files = sorted(glob.glob(args.input + "*"))
     out_files = get_output_filenames(args)
-    
+
     print("Number of files:", len(in_files))
 
     net = UNet(n_channels=1, n_classes=4)
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     net.load_state_dict(torch.load(args.model, map_location=device))
 
     logging.info("Model loaded !")
-    
+
     # Load volume into memory
     print("Loading volume into memory...")
     sample = []
@@ -101,7 +101,7 @@ if __name__ == "__main__":
         sample.append(img)
     sample = np.array(sample)
     print("Done!")
-    
+
     # XY prediction
     print("Predicting XY axis...")
     XY_volume = []
@@ -113,7 +113,7 @@ if __name__ == "__main__":
         XY_volume.append(mask)
     XY_volume = np.array(XY_volume)
     print("Done!")
-    
+
     # XZ prediction
     print("Predicting XZ axis...")
     XZ_volume = []
@@ -125,7 +125,7 @@ if __name__ == "__main__":
         XZ_volume.append(mask)
     XZ_volume = np.array(XZ_volume)
     print("Done!")
-    
+
     # YZ prediction
     print("Predicting YZ axis...")
     YZ_volume = []
@@ -137,24 +137,23 @@ if __name__ == "__main__":
         YZ_volume.append(mask)
     YZ_volume = np.array(YZ_volume)
     print("Done!")
-    
+
     XY_torch = torch.tensor(XY_volume).permute(1,0,2,3)
     XZ_torch = torch.tensor(XZ_volume).permute(1,2,0,3)
     YZ_torch = torch.tensor(YZ_volume).permute(1,2,3,0)
-    
+
     predictions = np.stack([XY_torch, XZ_torch, YZ_torch])
-    
+    #np.save('predictions.npy', predictions)
+
     #predictions = np.max(predictions, axis=0) is worst than mean
     print("Getting average probability from different orentations...")
     predictions = np.mean(predictions, axis=0) #better results than max
     predictions = torch.argmax(torch.tensor(predictions), dim=0)
     predictions = np.array(predictions)
     print("Done!")
-    
+
     print("SAVING...")
     for n in tqdm(range(predictions.shape[0])):
         filename = out_files[n]
         im = mask_to_image(predictions[n])
         im.save(filename)
-    
-
